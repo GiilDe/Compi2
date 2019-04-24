@@ -3,8 +3,9 @@
 //
 #include <algorithm>
 #include "grammar.h"
+#include "hw2.h"
 
-std::vector<grammar_rule> grammar;
+//std::vector<grammar_rule> grammar;
 std::vector<bool> nullables;
 std::vector<std::set<tokens> > first;
 std::vector<std::set<tokens> > follow;
@@ -14,8 +15,8 @@ bool is_token(int& n){
     return 20 <= n && n <= 38;
 }
 
-bool in_nullables(int& nonterm){
-    return nullables[nonterm];
+bool in_nullables(int& letter){
+    return !is_token(letter) && nullables[letter];
 }
 
 bool in_nullables(nonterminal& nonterm){
@@ -38,7 +39,7 @@ void insert_to_nullables(nonterminal& t){
 }
 
 void compute_nullable(){
-    nullables = std::vector(static_cast<int>(NONTERMINAL_ENUM_SIZE));
+    nullables = std::vector<bool>(static_cast<int>(NONTERMINAL_ENUM_SIZE));
     bool changed;
     do {
         changed = false;
@@ -77,7 +78,7 @@ void compute_first(){
             while (i != rule.rhs.end() &&
                     (i == rule.rhs.begin() || in_nullables(*(i - 1)))){
                 auto right_index = static_cast<int>(*i);
-                std::set<tokens> &right_first = first[right_index];
+                std::set<tokens>& right_first = first[right_index];
 
                 left_first.insert(right_first.begin(),
                                   right_first.end());
@@ -105,23 +106,28 @@ void compute_follow(){
             std::set<tokens> temp = this_follow;
 
             for (grammar_rule &rule : grammar) {
-                auto k = std::find(rule.rhs.begin(), rule.rhs.end(), i);
+                auto found = std::find(rule.rhs.begin(), rule.rhs.end(), i);
+                auto j = found;
 
-                if(k != rule.rhs.end()){
-                    k++;
-                }
-                auto j = k;
-                while (j != rule.rhs.end() &&
-                       (j == k || in_nullables(*(j - 1)))){
-                    auto right_index = static_cast<int>(*j);
-                    std::set<tokens> &right_follow = follow[right_index];
-
-                    this_follow.insert(right_follow.begin(),
-                                       right_follow.end());
-
+                if(found != rule.rhs.end()){
                     j++;
                 }
-                if(j == rule.rhs.end()){
+
+                bool last_nullable = true;
+                bool first_iter = true;
+                while (j != rule.rhs.end() &&
+                       (first_iter || in_nullables(*(j - 1)))){
+                    auto right_index = static_cast<int>(*j);
+                    std::set<tokens>& right_first = first[right_index];
+
+                    this_follow.insert(right_first.begin(),
+                                       right_first.end());
+
+                    last_nullable = in_nullables(*j);
+                    first_iter = false;
+                    j++;
+                }
+                if(last_nullable && found != rule.rhs.end()){
                     auto left_index = static_cast<int>(rule.lhs);
                     std::set<tokens>& left_follow = follow[left_index];
                     this_follow.insert(left_follow.begin(),
@@ -134,5 +140,5 @@ void compute_follow(){
             }
         }
     }while (changed);
-
+    print_follow(follow);
 }
