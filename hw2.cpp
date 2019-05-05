@@ -54,17 +54,16 @@ void compute_nullable(){
     print_nullable(nullables);
 }
 
-void initialize_terminals_first(){
+
+void compute_first(){
+    first = std::vector<std::set<tokens> >(39);
+
+    //initialize terminals first
     for(int i = 20; i <= 38; i++){
         std::set<tokens> temp;
         temp.insert(static_cast<tokens>(i));
         first[i] = temp;
     }
-}
-
-void compute_first(){
-    first = std::vector<std::set<tokens> >(39);
-    initialize_terminals_first();
 
     bool changed;
     do {
