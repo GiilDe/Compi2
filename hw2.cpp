@@ -162,12 +162,12 @@ static std::set<tokens> compute_first_recursive(std::vector<int>& rhs) {
     std::set<tokens> computed_first = std::set<tokens>();
 
     for (const int& term : rhs) {
-        if(in_nullables(term)) {
-            auto index = term;
-            std::set<tokens> &right_first = first[index];
+        auto index = term;
+        std::set<tokens> &right_first = first[index];
+        computed_first.insert(right_first.begin(), right_first.end());
 
-            computed_first.insert(right_first.begin(),
-                              right_first.end());
+        if(!in_nullables(term)) {
+            break;
         }
     }
     return computed_first;
