@@ -23,6 +23,7 @@ vector<set<tokens>> select;
 
 typedef unsigned int uint;
 typedef pair<nonterminal, tokens> nonterminal_terminal;
+typedef pair<grammar_rule, int> rule_int;
 
 const uint tokens_size = static_cast<int>(EF) - static_cast<int>(IMPORTANT) + 1;
 const uint nonterminal_size = static_cast<int>(NONTERMINAL_ENUM_SIZE);
@@ -163,12 +164,12 @@ static std::set<tokens> compute_first_recursive(std::vector<int>& rhs) {
     std::set<tokens> computed_first = std::set<tokens>();
 
     for (const int& term : rhs) {
-        auto index = term;
-        std::set<tokens> &right_first = first[index];
-        computed_first.insert(right_first.begin(), right_first.end());
+        if(in_nullables(term)) {
+            auto index = term;
+            std::set<tokens> &right_first = first[index];
 
-        if(!in_nullables(term)) {
-            break;
+            computed_first.insert(right_first.begin(),
+                              right_first.end());
         }
     }
     return computed_first;
@@ -195,7 +196,7 @@ void parser(){
     Q.push(EF);
 
     //create M
-    unordered_map<nonterminal_terminal, grammar_rule> M;
+    unordered_map<nonterminal_terminal, rule_int> M;
 
     for (int i = 0; i < rules_size; ++i) {
         grammar_rule& rule = grammar[i];
@@ -203,7 +204,7 @@ void parser(){
         nonterminal& left_side = rule.lhs;
 
         for(const tokens& t : rule_select) {
-            M[nonterminal_terminal(left_side, t)] = rule;
+            M[nonterminal_terminal(left_side, t)] = rule_int(rule, i);
         }
     }
 
