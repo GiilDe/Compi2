@@ -58,7 +58,7 @@ static inline void append_escape_seq() {
   curr_str[len + 1] = '\0';
 }
 
-static void show_string() {
+static int show_string() {
   return STRING;
 }
 

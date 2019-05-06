@@ -6,6 +6,7 @@
 #include "grammar.h"
 #include "hw2.h"
 #include <unordered_map>
+#include <map>
 
 
 using std::vector;
@@ -13,7 +14,6 @@ using std::stack;
 using std::set;
 using std::unordered_map;
 using std::pair;
-
 
 //std::vector<grammar_rule> grammar;
 vector<bool> nullables;
@@ -164,12 +164,12 @@ static std::set<tokens> compute_first_recursive(std::vector<int>& rhs) {
     std::set<tokens> computed_first = std::set<tokens>();
 
     for (const int& term : rhs) {
-        if(in_nullables(term)) {
-            auto index = term;
-            std::set<tokens> &right_first = first[index];
+        auto index = term;
+        std::set<tokens> &right_first = first[index];
+        computed_first.insert(right_first.begin(), right_first.end());
 
-            computed_first.insert(right_first.begin(),
-                              right_first.end());
+        if(!in_nullables(term)) {
+            break;
         }
     }
     return computed_first;
@@ -191,12 +191,69 @@ void compute_select() {
     print_select(select);
 }
 
-void parser(){
+class MatchException : public std::exception {};
+class PredictException : public std::exception {};
+
+/**
+ * MATCH t,t
+ * Match the top of the parser stack and the next terminal of the input.
+ * @param Q The parser stack
+ * @param X The current stack top (terminal)
+ * @param t The next input terminal
+ */
+static void match(stack<int>& Q, const tokens& X, const tokens& t) {
+    if (X == t) {
+        Q.pop();
+    } else {
+        throw MatchException();
+    }
+}
+
+template<>
+struct std::hash<nonterminal_terminal> {
+
+    std::size_t operator()(const nonterminal_terminal& ntt) const {
+        return ntt.first * ntt.second;
+    }
+};
+
+typedef std::map<nonterminal, std::map<tokens, int>> predict_map;
+
+static void push_all(stack<int>& Q, const vector<int>& rule_rhs) {
+    for (auto term = rule_rhs.end(); term != rule_rhs.begin(); term--) {
+        Q.push(*term);
+    }
+}
+
+/**
+ * PREDICT X,t
+ * Swap the nonterminal X for an appropriate grammer rule
+ * @param Q The parser stack
+ * @param M The prediction map
+ * @param X The current stack top (nonterminal)
+ * @param t The next input terminal
+ */
+static void predict(stack<int>& Q, predict_map& M, const nonterminal & X, const tokens& t) {
+    std::map<tokens, int> token_map = M[X];
+    auto iter = token_map.find(t);
+    if (iter == token_map.end()) {
+        // Not found
+        throw PredictException();
+    } else {
+        Q.pop();
+        int map_entry = (*iter).second;
+        auto rule = grammar[map_entry];
+        push_all(Q, rule.rhs);
+        printf("%d\n", map_entry);
+    }
+}
+
+void parser() {
     stack<int> Q;
-    Q.push(EF);
+    Q.push(S);
 
     //create M
-    unordered_map<nonterminal_terminal, rule_int> M;
+    predict_map M;
 
     for (int i = 0; i < rules_size; ++i) {
         grammar_rule& rule = grammar[i];
@@ -204,11 +261,32 @@ void parser(){
         nonterminal& left_side = rule.lhs;
 
         for(const tokens& t : rule_select) {
-            M[nonterminal_terminal(left_side, t)] = rule_int(rule, i);
+            M[left_side][t] = i;
         }
     }
 
+    auto t = static_cast<tokens>(yylex());
 
+    while (!Q.empty()) {
+        auto stack_top = Q.top();
+        if (is_token(stack_top)) {
+            // Match t,t
+            auto X = static_cast<tokens>(stack_top);
+            match(Q, X, t);
+        } else {
+            // Match X,t
+            auto X = static_cast<nonterminal>(stack_top);
+            predict(Q, M, X, t);
 
+        }
+        t = static_cast<tokens>(yylex());
+    }
 
+    if (t == EF) {
+        // TODO Report success
+        printf("Success\n");
+    } else {
+        // TODO Report error
+        printf("Syntax error\n");
+    }
 }

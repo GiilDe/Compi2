@@ -5,7 +5,6 @@
 #include <cstdio>
 
 
-
 int main(int argc, char *argv[]) {
     bool parse = true;
     for (int i = 1; i < argc; ++i) {
@@ -30,7 +29,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
     }
-//    if (parse) {
-//        parser();
-//    }
+    if (parse) {
+        parser();
+    }
 }
