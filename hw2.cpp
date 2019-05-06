@@ -21,11 +21,12 @@ vector<set<tokens>> first;
 vector<set<tokens>> follow;
 vector<set<tokens>> select;
 
+typedef unsigned int uint;
+typedef pair<nonterminal, tokens> nonterminal_terminal;
 
-uint tokens_size = static_cast<int>(EF)-static_cast<int>(IMPORTANT)+1;
-uint nonterminal_size = static_cast<int>(NONTERMINAL_ENUM_SIZE);
-uint rules_size = grammar.size();
-
+const uint tokens_size = static_cast<int>(EF) - static_cast<int>(IMPORTANT) + 1;
+const uint nonterminal_size = static_cast<int>(NONTERMINAL_ENUM_SIZE);
+const uint rules_size = grammar.size();
 
 bool is_token(const int &n) {
     return 20 <= n && n <= 38;
@@ -194,15 +195,15 @@ void parser(){
     Q.push(EF);
 
     //create M
-    unordered_map<pair<nonterminal, tokens>, grammar_rule> M;
+    unordered_map<nonterminal_terminal, grammar_rule> M;
 
     for (int i = 0; i < rules_size; ++i) {
         grammar_rule& rule = grammar[i];
         set<tokens>& rule_select = select[i];
         nonterminal& left_side = rule.lhs;
 
-        for(const tokens& t : s){
-            M[pair(left_side, t)] = rule;
+        for(const tokens& t : rule_select) {
+            M[nonterminal_terminal(left_side, t)] = rule;
         }
     }
 
