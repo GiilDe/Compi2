@@ -27,13 +27,13 @@ void show_token(char * name) {
 
 void append_curr_str(char * suffix) {
   if (!curr_str) {
-    curr_str = malloc(sizeof(char) * (strlen(suffix) + 1));
+    curr_str = (char *) malloc(sizeof(char) * (strlen(suffix) + 1));
     strcpy(curr_str, suffix);
     curr_str[strlen(suffix)] = '\0';
     return;
   }
   char * prefix = curr_str;
-  curr_str = malloc(sizeof(char) * (strlen(suffix) + strlen(prefix) + 1));
+  curr_str = (char *) malloc(sizeof(char) * (strlen(suffix) + strlen(prefix) + 1));
   curr_str[0] = '\0';
   strcat(curr_str, prefix);
   strcat(curr_str, suffix);
@@ -46,12 +46,12 @@ static inline void append_escape_seq() {
     return;
   }
   if (!curr_str) {
-    curr_str = malloc(sizeof(char));
+    curr_str = (char *) malloc(sizeof(char));
     curr_str[0] = hex;
     return;
   }
   char * prefix = curr_str;
-  curr_str = malloc(sizeof(char) * (strlen(prefix) + 2));
+  curr_str = (char *) malloc(sizeof(char) * (strlen(prefix) + 2));
   int len = strlen(prefix);
   strcpy(curr_str, prefix);
   curr_str[len] = (char) hex;

@@ -1,9 +1,7 @@
 #ifndef __HW2__
 #define __HW2__
 
-#include "tokens.h"
 #include "grammar.h"
-#include <unordered_map>
 #include <stack>
 #include <algorithm>
 #include <map>
@@ -14,8 +12,7 @@
 using std::vector;
 using std::stack;
 using std::set;
-using std::unordered_map;
-using std::pair;
+using std::map;
 
 //std::vector<grammar_rule> grammar;
 vector<bool> nullables;
@@ -24,10 +21,7 @@ vector<set<tokens> > follow;
 vector<set<tokens> > select;
 
 typedef unsigned int uint;
-typedef pair<nonterminal, tokens> nonterminal_terminal;
-typedef pair<grammar_rule, int> rule_int;
 
-const uint tokens_size = static_cast<int>(EF) - static_cast<int>(IMPORTANT) + 1;
 const uint nonterminal_size = static_cast<int>(NONTERMINAL_ENUM_SIZE);
 const uint rules_size = grammar.size();
 
@@ -232,15 +226,7 @@ static void match(stack<int>& Q, const tokens& X, const tokens& t) {
     }
 }
 
-template<>
-struct std::hash<nonterminal_terminal> {
-
-    std::size_t operator()(const nonterminal_terminal& ntt) const {
-        return ntt.first * ntt.second;
-    }
-};
-
-typedef std::map<nonterminal, std::map<tokens, int> > predict_map;
+typedef map<nonterminal, map<tokens, int> > predict_map;
 
 static void push_all(stack<int>& Q, const vector<int>& rule_rhs) {
     vector<int>::const_iterator term;
@@ -259,8 +245,8 @@ static void push_all(stack<int>& Q, const vector<int>& rule_rhs) {
  * @param t The next input terminal
  */
 static void predict(stack<int>& Q, predict_map& M, const nonterminal & X, const tokens& t) {
-    std::map<tokens, int> token_map = M[X];
-    std::map<tokens, int>::iterator iter;
+    map<tokens, int> token_map = M[X];
+    map<tokens, int>::iterator iter;
 
     iter = token_map.find(t);
     if (iter == token_map.end()) {
@@ -285,6 +271,7 @@ int yylex();
  * implements an LL(1) parser for the grammar using yylex()
  */
 void parser() {
+    printf("Parser IN\n");
     stack<int> Q;
     Q.push(S);
 
@@ -292,6 +279,7 @@ void parser() {
     predict_map M;
 
     for (int i = 0; i < rules_size; ++i) {
+        printf("Grammer rule %d\n", i);
         grammar_rule& rule = grammar[i];
         set<tokens>& rule_select = select[i];
         nonterminal& left_side = rule.lhs;

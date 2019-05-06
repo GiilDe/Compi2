@@ -1,6 +1,5 @@
 #include "tokens.h"
 #include "grammar.h"
-#include "hw2.h"
 #include <iostream>
 
 void print_token(tokens tok)
