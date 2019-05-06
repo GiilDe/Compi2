@@ -24,11 +24,11 @@ int main(int argc, char *argv[]) {
             parse = false;
             continue;
         }
-//        if (strcmp(argv[i], "-select") == 0) {
-//            compute_select();
-//            parse = false;
-//            continue;
-//        }
+        if (strcmp(argv[i], "-select") == 0) {
+            compute_select();
+            parse = false;
+            continue;
+        }
     }
 //    if (parse) {
 //        parser();
