@@ -23,7 +23,6 @@ vector<set<tokens> > select;
 typedef unsigned int uint;
 
 const uint nonterminal_size = static_cast<int>(NONTERMINAL_ENUM_SIZE);
-const uint rules_size = grammar.size();
 
 bool is_token(const int &n) {
     return 20 <= n && n <= 38;
@@ -226,7 +225,7 @@ static void match(stack<int>& Q, const tokens& X, const tokens& t) {
     }
 }
 
-typedef map<nonterminal, map<tokens, int> > predict_map;
+typedef vector<vector<int> > predict_map;
 
 static void push_all(stack<int>& Q, const vector<int>& rule_rhs) {
     vector<int>::const_iterator term;
@@ -245,16 +244,16 @@ static void push_all(stack<int>& Q, const vector<int>& rule_rhs) {
  * @param t The next input terminal
  */
 static void predict(stack<int>& Q, predict_map& M, const nonterminal & X, const tokens& t) {
-    map<tokens, int> token_map = M[X];
-    map<tokens, int>::iterator iter;
+//    map<int, int>& token_map = M[X];
+    // map<int, int>::iterator iter;
 
-    iter = token_map.find(t);
-    if (iter == token_map.end()) {
+    // iter = token_map.find(t);
+    if (std::find(M[X].begin(), M[X].end(), t) == M[X].end()) {
         // Not found
         throw PredictException();
     } else {
         Q.pop();
-        int map_entry = (*iter).second;
+        int map_entry = M[X][t];
         grammar_rule rule = grammar[map_entry];
         push_all(Q, rule.rhs);
         printf("%d\n", map_entry);
@@ -271,22 +270,29 @@ int yylex();
  * implements an LL(1) parser for the grammar using yylex()
  */
 void parser() {
-    printf("Parser IN\n");
+    compute_nullable();
+    compute_first();
+    compute_follow();
+    compute_select();
+
     stack<int> Q;
     Q.push(S);
 
     //create M
-    predict_map M;
+    const uint rules_size = grammar.size();
+    predict_map M(rules_size);
 
     for (int i = 0; i < rules_size; ++i) {
-        printf("Grammer rule %d\n", i);
         grammar_rule& rule = grammar[i];
         set<tokens>& rule_select = select[i];
-        nonterminal& left_side = rule.lhs;
+        nonterminal left_side = rule.lhs;
 
+
+        vector<int> v(nonterminal_size);
         FOR_EACH(iter, set<tokens>, rule_select) {
-            M[left_side][*iter] = i;
+            v[*iter] = i;
         }
+        M[left_side] = v;
     }
 
     tokens t = static_cast<tokens>(yylex());
@@ -296,11 +302,21 @@ void parser() {
         if (is_token(stack_top)) {
             // Match t,t
             tokens X = static_cast<tokens>(stack_top);
-            match(Q, X, t);
+            try {
+                match(Q, X, t);
+            } catch (const MatchException&) {
+                // TODO Handle
+                printf("Match Exception\n");
+            }
         } else {
-            // Match X,t
+            // Predict X,t
             nonterminal X = static_cast<nonterminal>(stack_top);
-            predict(Q, M, X, t);
+            try {
+                predict(Q, M, X, t);
+            } catch (const PredictException&) {
+                // TODO Handle
+                printf("Predict Exception\n");
+            }
 
         }
         t = static_cast<tokens>(yylex());
