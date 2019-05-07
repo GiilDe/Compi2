@@ -228,9 +228,9 @@ static void match(stack<int>& Q, const tokens& X, const tokens& t) {
 typedef vector<vector<int> > predict_map;
 
 static void push_all(stack<int>& Q, const vector<int>& rule_rhs) {
-    vector<int>::const_iterator term;
+    vector<int>::const_reverse_iterator term;
 
-    for (term = rule_rhs.end(); term != rule_rhs.begin(); term--) {
+    for (term = rule_rhs.rbegin(); term != rule_rhs.rend(); ++term) {
         Q.push(*term);
     }
 }
@@ -248,7 +248,7 @@ static void predict(stack<int>& Q, predict_map& M, const nonterminal & X, const 
     // map<int, int>::iterator iter;
 
     // iter = token_map.find(t);
-    if (std::find(M[X].begin(), M[X].end(), t) == M[X].end()) {
+    if (M[X][t] == -1) {
         // Not found
         throw PredictException();
     } else {
@@ -256,7 +256,7 @@ static void predict(stack<int>& Q, predict_map& M, const nonterminal & X, const 
         int map_entry = M[X][t];
         grammar_rule rule = grammar[map_entry];
         push_all(Q, rule.rhs);
-        printf("%d\n", map_entry);
+        printf("%d\n", map_entry + 1);
     }
 }
 
@@ -280,19 +280,19 @@ void parser() {
 
     //create M
     const uint rules_size = grammar.size();
-    predict_map M(rules_size);
+    const uint tokens_size = static_cast<int>(EF) - static_cast<int>(IMPORTANT) + 1 + 20;
+    predict_map M(nonterminal_size, vector<int>(tokens_size, -1));
 
     for (int i = 0; i < rules_size; ++i) {
         grammar_rule& rule = grammar[i];
         set<tokens>& rule_select = select[i];
         nonterminal left_side = rule.lhs;
+        int X = static_cast<int>(left_side);
 
-
-        vector<int> v(nonterminal_size);
         FOR_EACH(iter, set<tokens>, rule_select) {
-            v[*iter] = i;
+            int t = static_cast<int>(*iter);
+            M[X][t] = i;
         }
-        M[left_side] = v;
     }
 
     tokens t = static_cast<tokens>(yylex());
@@ -304,6 +304,7 @@ void parser() {
             tokens X = static_cast<tokens>(stack_top);
             try {
                 match(Q, X, t);
+                t = static_cast<tokens>(yylex());
             } catch (const MatchException&) {
                 // TODO Handle
                 printf("Match Exception\n");
@@ -319,14 +320,11 @@ void parser() {
             }
 
         }
-        t = static_cast<tokens>(yylex());
     }
 
     if (t == EF) {
-        // TODO Report success
         printf("Success\n");
     } else {
-        // TODO Report error
         printf("Syntax error\n");
     }
 }
